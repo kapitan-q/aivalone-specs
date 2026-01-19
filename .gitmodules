@@ -1,0 +1,3 @@
+[submodule "services/aivalone-backend"]
+	path = services/aivalone-backend
+	url = git@github.com:kapitan-q/aivalone-backend.git
