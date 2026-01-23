@@ -6,72 +6,72 @@
 
 ### Core (Основные документы)
 
-- [Обзор проекта](core/overview.md) - Общее описание проекта и архитектуры
-- [Архитектура DDD](core/architecture.md) - Принципы Domain-Driven Design в проекте
+- [Обзор проекта](docs/core/overview.md) - Общее описание проекта и архитектуры
+- [Архитектура DDD](docs/core/architecture.md) - Принципы Domain-Driven Design в проекте
 
 ### Backend
 
 #### Account Context
 
-- [Обзор Account Context](backend/account/overview.md) - Управление пользователями и правами
+- [Обзор Account Context](docs/backend/account/overview.md) - Управление пользователями и правами
 
 #### Billing Context
 
-- [Обзор Billing Context](backend/billing/overview.md) - Управление тарифами и подписками
-- [Тарифы](backend/billing/tariffs.md) - Тарифные планы и опции
-- [Подписки](backend/billing/subscriptions.md) - Управление подписками пользователей
-- [Система прав](backend/billing/permissions.md) - Агрегация и проверка прав
+- [Обзор Billing Context](docs/backend/billing/overview.md) - Управление тарифами и подписками
+- [Тарифы](docs/backend/billing/tariffs.md) - Тарифные планы и опции
+- [Подписки](docs/backend/billing/subscriptions.md) - Управление подписками пользователей
+- [Система прав](docs/backend/billing/permissions.md) - Агрегация и проверка прав
 
 #### Bot Context
 
-- [Обзор Bot Context](backend/bot/overview.md) - Telegram-бот и диалоги
-- [Диалоги](backend/bot/conversations.md) - Многошаговые диалоги с сохранением состояния
-- [Вебхуки](backend/bot/webhooks.md) - Управление вебхуками мессенджеров
-- [Роутинг](backend/bot/router.md) - Маршрутизация сообщений
+- [Обзор Bot Context](docs/backend/bot/overview.md) - Telegram-бот и диалоги
+- [Диалоги](docs/backend/bot/conversations.md) - Многошаговые диалоги с сохранением состояния
+- [Вебхуки](docs/backend/bot/webhooks.md) - Управление вебхуками мессенджеров
+- [Роутинг](docs/backend/bot/router.md) - Маршрутизация сообщений
 
 #### Monitoring Context
 
-- [Обзор Monitoring Context](backend/monitoring/overview.md) - Мониторинг и фильтрация Telegram-контента
-- [Фильтры](backend/monitoring/filters.md) - Фильтры пользователей и стратегии сопоставления
-- [Сессии](backend/monitoring/sessions.md) - Управление сессиями Telegram
-- [Карта пересечений](backend/monitoring/intersection-map.md) - Shared Ingress и failover
+- [Обзор Monitoring Context](docs/backend/monitoring/overview.md) - Мониторинг и фильтрация Telegram-контента
+- [Фильтры](docs/backend/monitoring/filters.md) - Фильтры пользователей и стратегии сопоставления
+- [Сессии](docs/backend/monitoring/sessions.md) - Управление сессиями Telegram
+- [Карта пересечений](docs/backend/monitoring/intersection-map.md) - Shared Ingress и failover
 
 #### Shared Context
 
-- [Обзор Shared Context](backend/shared/overview.md) - Общие компоненты
-- [Система прав](backend/shared/permissions.md) - PermissionsTrait и FeatureRegistry
+- [Обзор Shared Context](docs/backend/shared/overview.md) - Общие компоненты
+- [Система прав](docs/backend/shared/permissions.md) - PermissionsTrait и FeatureRegistry
 
 ## Быстрая навигация
 
 ### По функциональности
 
 **Управление пользователями:**
-- [Account Context](backend/account/overview.md)
+- [Account Context](docs/backend/account/overview.md)
 
 **Тарифы и подписки:**
-- [Billing Context - Обзор](backend/billing/overview.md)
-- [Тарифы](backend/billing/tariffs.md)
-- [Подписки](backend/billing/subscriptions.md)
+- [Billing Context - Обзор](docs/backend/billing/overview.md)
+- [Тарифы](docs/backend/billing/tariffs.md)
+- [Подписки](docs/backend/billing/subscriptions.md)
 
 **Система прав:**
-- [Billing Context - Система прав](backend/billing/permissions.md)
-- [Shared Context - Система прав](backend/shared/permissions.md)
+- [Billing Context - Система прав](docs/backend/billing/permissions.md)
+- [Shared Context - Система прав](docs/backend/shared/permissions.md)
 
 **Telegram-бот:**
-- [Bot Context - Обзор](backend/bot/overview.md)
-- [Диалоги](backend/bot/conversations.md)
-- [Вебхуки](backend/bot/webhooks.md)
-- [Роутинг](backend/bot/router.md)
+- [Bot Context - Обзор](docs/backend/bot/overview.md)
+- [Диалоги](docs/backend/bot/conversations.md)
+- [Вебхуки](docs/backend/bot/webhooks.md)
+- [Роутинг](docs/backend/bot/router.md)
 
 **Мониторинг:**
-- [Monitoring Context - Обзор](backend/monitoring/overview.md)
-- [Фильтры](backend/monitoring/filters.md)
-- [Сессии](backend/monitoring/sessions.md)
-- [Карта пересечений](backend/monitoring/intersection-map.md)
+- [Monitoring Context - Обзор](docs/backend/monitoring/overview.md)
+- [Фильтры](docs/backend/monitoring/filters.md)
+- [Сессии](docs/backend/monitoring/sessions.md)
+- [Карта пересечений](docs/backend/monitoring/intersection-map.md)
 
 **Архитектура:**
-- [Обзор проекта](core/overview.md)
-- [Архитектура DDD](core/architecture.md)
+- [Обзор проекта](docs/core/overview.md)
+- [Архитектура DDD](docs/core/architecture.md)
 
 ## Связи между контекстами
 
@@ -106,7 +106,7 @@
 
 ## Планы разработки
 
-Все выполненные задачи задокументированы в папке [plans](plans/).
+Все выполненные задачи задокументированы в папке [plans](docs/plans/).
 
 ## Обновление документации
 
