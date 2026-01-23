@@ -1,0 +1,29 @@
+{
+  "model": "claude-sonnet-4-20250514",
+  "alwaysThinkingEnabled": true,
+  "plansDirectory": "./docs/plans",
+  "enableAllProjectMcpServers": true,
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+        "Bash(npm:*)", 
+        "Bash(git:*)", 
+        "Edit(services/**)",
+        "Edit(docs/**)"
+    ],
+    "deny": [
+      "Read(services/*/.env*)",
+      "Bash(rm -rf:*)"
+    ]
+  },
+  "env": {
+    "ENABLE_TOOL_SEARCH": "auto:5"
+  },
+  "language": "russian",
+  "autoUpdatesChannel": "stable",
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "spinnerTipsEnabled": false
+}
