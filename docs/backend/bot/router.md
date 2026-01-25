@@ -2,14 +2,14 @@
 
 ## Обзор
 
-`BotRouter` отвечает за маршрутизацию входящих сообщений от мессенджеров в соответствующие обработчики (диалоги или команды).
+`BotRouter` отвечает за маршрутизацию входящих сообщений от мессенджеров в соответствующие обработчики (диалоги).
 
 ## Принципы работы
 
 ### Разделение обязанностей
 
 1. **BotRouter** - только роутинг:
-   - Определяет тип запроса (команда, callback, сообщение)
+   - Определяет тип запроса (навигационная команда или текстовое сообщение)
    - Направляет запрос в соответствующий обработчик
    - Работает с адаптерами мессенджеров и отправкой ответов
    - НЕ работает напрямую с диалогами и состоянием
@@ -18,65 +18,100 @@
    - Проверка наличия активного диалога
    - Получение диалога по коду
    - Управление жизненным циклом диалогов (старт, возобновление, обработка)
+   - Переход к конкретному шагу диалога
    - Работа с состоянием через StateRepository
+
+## Унифицированный формат команд
+
+Все навигационные действия используют унифицированный формат:
+
+```
+/conversationCode[:step[:param1[:param2[:...:paramN]]]]
+```
+
+**Примеры:**
+- `/billing` — запуск диалога
+- `/billing:stepSelect` — переход к шагу
+- `/billing:stepPayment:premium` — шаг с параметром
+- `/setupfilter:stepEdit:uuid-123` — шаг с ID
+
+Этот формат используется как для команд (текстовые сообщения), так и для callback_data (inline-кнопки).
+
+Подробнее см. [Унифицированные команды](unified-commands.md).
 
 ## Алгоритм роутинга
 
-### 1. Получение и валидация пользователя
+### Логика `handleUpdate()`
+
+```
+┌─────────────────────────────────────────┐
+│        Входящее обновление              │
+└───────────────────┬─────────────────────┘
+                    ▼
+        ┌───────────────────────┐
+        │  Парсинг BotRequest   │
+        │  (command, step,      │
+        │   params, message)    │
+        └───────────┬───────────┘
+                    ▼
+          ┌─────────────────┐
+          │ Есть command?   │
+          └────────┬────────┘
+         Да        │        Нет
+      ┌────────────┴────────────┐
+      ▼                         ▼
+┌─────────────┐        ┌─────────────────┐
+│handleNavig- │        │Есть активный    │
+│ation()     │        │контекст?        │
+└─────────────┘        └────────┬────────┘
+                       Да       │       Нет
+                  ┌─────────────┴──────────┐
+                  ▼                        ▼
+          ┌─────────────┐          ┌─────────────┐
+          │handleConver-│          │"Используйте│
+          │sation()    │          │ команды"    │
+          └─────────────┘          └─────────────┘
+```
+
+### 1. Навигационная команда (command !== null)
 
 ```php
-$user = $this->resolveUser($update, $adapter);
+private function handleNavigation(UserId $userId, BotRequest $request, $user, BotInterface $adapter): void
 ```
 
 **Логика:**
-- Извлекает `telegram_id` из обновления
-- Получает пользователя через `AccountPortInterface::getUserByTelegramId()`
-- Если пользователь не найден - регистрирует нового
+- **Только command без step** → очистка контекста, запуск диалога с `stepStart`
+- **command + step** → проверка контекста:
+  - Если код совпадает с активным → переход к шагу через `goToStep()`
+  - Если код не совпадает → очистка контекста, запуск нового диалога с указанным шагом
 
-### 2. Проверка активного диалога
+### 2. Текстовое сообщение в активном диалоге
 
 ```php
-if ($this->conversationManager->hasActiveConversation($userId)) {
-    // Обработка в активном диалоге
+private function handleConversation(UserId $userId, BotRequest $request, BotInterface $adapter): void
+```
+
+**Логика:**
+- Передает сообщение в текущий шаг диалога через `ConversationManager::handleMessage()`
+- Диалог обрабатывает ввод и возвращает ответ
+
+### 3. Текстовое сообщение без активного диалога
+
+**Логика:**
+- Отправляет подсказку: "Используйте команды для взаимодействия с ботом"
+
+## Глобальные команды
+
+Команды `/start` и `/menu` имеют особую логику:
+- Всегда сбрасывают текущий активный диалог
+- Запускают соответствующий диалог с чистого листа
+
+```php
+if (in_array($command, ['start', 'menu'], true)) {
+    if ($this->conversationManager->hasActiveConversation($userId)) {
+        $this->conversationManager->cancelActiveConversation($userId);
+    }
 }
-```
-
-**Логика:**
-- Проверяет наличие активного диалога через `ConversationManager`
-- Если диалог активен - передает сообщение в `handleConversation()`
-
-### 3. Обработка callback query
-
-```php
-if ($adapter->isCallbackQuery($update)) {
-    // Обработка callback query
-}
-```
-
-**Логика:**
-- Определяет тип callback query (команда или данные)
-- Если команда - запускает новый диалог
-- Если данные - обрабатывает в активном диалоге
-
-### 4. Обработка команды
-
-```php
-$command = $this->extractCommand($update, $adapter);
-if ($command) {
-    // Запуск диалога по команде
-}
-```
-
-**Логика:**
-- Извлекает команду из сообщения
-- Получает диалог по команде через `ConversationManager::getConversationByCode()`
-- Проверяет права доступа (если требуется)
-- Запускает диалог
-
-### 5. Обработка обычного сообщения
-
-```php
-// Если нет активного диалога и нет команды - отправка сообщения об ошибке
 ```
 
 ## Методы BotRouter
@@ -92,9 +127,33 @@ if ($command) {
 **Алгоритм:**
 1. Валидация входных параметров
 2. Получение адаптера через `BotFactory`
-3. Получение и валидация пользователя
-4. Проверка активного диалога
-5. Роутинг в соответствующий обработчик
+3. Парсинг запроса в `BotRequest`
+4. Получение и валидация пользователя
+5. Подтверждение callback query (если есть)
+6. Роутинг в соответствующий обработчик
+
+### handleNavigation()
+
+Обработка навигационной команды.
+
+**Логика:**
+1. Получает диалог по коду через `ConversationManager::getConversationByCode()`
+2. Проверяет права доступа (если требуется)
+3. Если есть step и активный диалог совпадает → `goToStep()`
+4. Иначе → очистка контекста и `startConversation()`
+
+### goToStep()
+
+Переход к конкретному шагу в активном диалоге.
+
+**Параметры:**
+- `UserId $userId` - ID пользователя
+- `BotRequest $request` - Запрос с указанием шага и параметров
+- `BotInterface $adapter` - Адаптер мессенджера
+
+**Логика:**
+- Вызывает `ConversationManager::goToStep()`
+- Передает request с command, step и params
 
 ### handleConversation()
 
@@ -105,108 +164,53 @@ if ($command) {
 - `BotRequest $request` - Запрос от мессенджера
 - `BotInterface $adapter` - Адаптер мессенджера
 
-**Логика:**
-- Получает активный диалог через `ConversationManager`
-- Передает сообщение в диалог через `handle()`
-- Отправляет ответ пользователю
-- Обрабатывает ошибки
-
 ### startConversation()
 
 Запуск нового диалога.
 
 **Параметры:**
-- `string $conversationCode` - Код диалога
 - `UserId $userId` - ID пользователя
 - `BotRequest $request` - Запрос от мессенджера
+- `ConversationInterface $conversation` - Диалог для запуска
+- `?string $stepName` - Имя шага для перехода (опционально)
 - `BotInterface $adapter` - Адаптер мессенджера
 
-**Логика:**
-1. Получает диалог через `ConversationManager::getConversationByCode()`
-2. Проверяет права доступа (если требуется)
-3. Запускает диалог через `ConversationManager::startOrResume()`
-4. Отправляет ответ пользователю
-5. Обрабатывает ошибки
+## Интеграция с ConversationManager
 
-### resolveUser()
-
-Получение и валидация пользователя.
-
-**Параметры:**
-- `array $update` - Обновление от мессенджера
-- `BotInterface $adapter` - Адаптер мессенджера
-
-**Возвращает:**
-- `User` - Пользователь
-
-**Логика:**
-- Извлекает `telegram_id` из обновления
-- Получает пользователя через `AccountPortInterface`
-- Если пользователь не найден - регистрирует нового
-- Возвращает пользователя
-
-### extractCommand()
-
-Извлечение команды из обновления.
-
-**Параметры:**
-- `array $update` - Обновление от мессенджера
-- `BotInterface $adapter` - Адаптер мессенджера
-
-**Возвращает:**
-- `?string` - Код команды или `null`
-
-**Логика:**
-- Извлекает команду из сообщения или callback query
-- Нормализует команду (удаляет префикс '/')
-- Возвращает код команды
-
-## Интеграция с другими компонентами
-
-### BotFactory
-
-Фабрика для получения адаптеров мессенджеров.
-
-**Использование:**
-```php
-$adapter = $this->botFactory->get($messenger);
-```
-
-### ConversationManager
-
-Сервис для управления диалогами.
-
-**Использование:**
 ```php
 // Проверка активного диалога
-if ($this->conversationManager->hasActiveConversation($userId)) {
-    // ...
-}
+$this->conversationManager->hasActiveConversation($userId);
 
-// Получение диалога по коду
-$conversation = $this->conversationManager->getConversationByCode($code);
+// Получение кода активного диалога
+$activeCode = $this->conversationManager->getActiveConversationCode($userId);
 
-// Запуск или возобновление диалога
-$response = $this->conversationManager->startOrResume($code, $userId, $request);
+// Переход к шагу
+$response = $this->conversationManager->goToStep($userId, $request);
+
+// Запуск диалога
+$response = $this->conversationManager->startOrResume($code, $userId, $request, $stepName);
+
+// Обработка сообщения
+$response = $this->conversationManager->handleMessage($userId, $request);
 ```
 
-### AccountPortInterface
+## Обработка Callback Query
 
-Интерфейс для взаимодействия с Account Context.
+Callback query (нажатие inline-кнопки) обрабатывается как обычная навигационная команда:
 
-**Использование:**
+1. `TelegramAdapter::parseRequest()` парсит callback_data в унифицированный формат
+2. `BotRouter` получает `BotRequest` с command, step, params
+3. Роутинг происходит по стандартной логике
+
+Подтверждение нажатия (ack) выполняется автоматически:
+
 ```php
-$user = $this->accountPort->getUserByTelegramId($telegramId);
-```
-
-### FeatureRegistry
-
-Реестр стратегий проверки прав.
-
-**Использование:**
-```php
-if ($user->can('MAX_GROUP', $currentCount, $this->featureRegistry)) {
-    // ...
+private function handleCallbackQueryAck(BotRequest $request, BotInterface $adapter): void
+{
+    $callbackQueryId = $request->getMetadataValue('callback_query_id');
+    if ($callbackQueryId !== null) {
+        $adapter->answerCallbackQuery($callbackQueryId);
+    }
 }
 ```
 
@@ -217,18 +221,15 @@ if ($user->can('MAX_GROUP', $currentCount, $this->featureRegistry)) {
 Все ошибки обрабатываются через единый метод `handleError()`:
 
 ```php
-private function handleError(\Throwable $e, BotInterface $adapter, ?int $chatId = null): void
-{
-    // Логирование ошибки
-    $this->logger->error('BotRouter error', [
-        'exception' => $e,
-        'chatId' => $chatId,
-    ]);
-
-    // Отправка сообщения об ошибке пользователю
-    if ($chatId) {
-        $adapter->sendMessage($chatId, $this->messageProvider->getErrorMessage());
-    }
+private function handleError(
+    int $telegramUserId,
+    BotInterface $adapter,
+    string $userMessage,
+    string $logMessage,
+    array $context = []
+): void {
+    $this->logger->error($logMessage, array_merge($context, ['telegramUserId' => $telegramUserId]));
+    $adapter->sendMessage($telegramUserId, $userMessage);
 }
 ```
 
@@ -236,11 +237,12 @@ private function handleError(\Throwable $e, BotInterface $adapter, ?int $chatId 
 
 Централизованное управление сообщениями бота.
 
-**Использование:**
 ```php
-$message = $this->messageProvider->getErrorMessage();
-$message = $this->messageProvider->getCommandNotFoundMessage();
-$message = $this->messageProvider->getPermissionDeniedMessage();
+$this->messageProvider->getUseCommands();          // Подсказка использовать команды
+$this->messageProvider->getUnknownCommand();       // Неизвестная команда
+$this->messageProvider->getConversationError();    // Ошибка диалога
+$this->messageProvider->getUserNotRegistered();    // Пользователь не зарегистрирован
+$this->messageProvider->getInsufficientPermissions(); // Недостаточно прав
 ```
 
 ## Логирование
@@ -256,10 +258,12 @@ $message = $this->messageProvider->getPermissionDeniedMessage();
 - `userId` - ID пользователя
 - `conversationCode` - Код диалога
 - `command` - Команда
+- `step` - Шаг
 
 ## Связанные документы
 
 - [Обзор Bot Context](overview.md)
 - [Диалоги](conversations.md)
+- [Унифицированные команды](unified-commands.md)
 - [Вебхуки](webhooks.md)
 - [Account Context](../account/overview.md)
