@@ -1,0 +1,179 @@
+# Аудит контекста Monitoring: несоответствия спецификации и архитектурные проблемы
+
+## Резюме
+
+Проведён комплексный анализ контекста Monitoring на соответствие:
+- Спецификации в `docs/backend/monitoring/`
+- Принципам SOLID, DRY, KISS
+- Архитектурным паттернам проекта (DDD, Clean Architecture)
+
+---
+
+## КРИТИЧЕСКИЕ ПРОБЛЕМЫ (блокируют работу/безопасность)
+
+### C1. Отсутствует шифрование sessionString
+- **Файл:** [Session.php](services/aivalone-backend/src/Context/Monitoring/Domain/Model/Session.php)
+- **Проблема:** `sessionString` хранится в открытом виде. Спецификация требует шифрование.
+- **Риск:** Критическая уязвимость безопасности - утечка данных сессий Telegram
+- **Решение:** Реализовать шифрование через `sodium_crypto_secretbox` или Symfony Secrets
+
+### C2. Заглушка notifyFilterOwners()
+- **Файл:** [AccessLostEventHandler.php:74-78](services/aivalone-backend/src/Context/Monitoring/Application/EventHandler/AccessLostEventHandler.php#L74-L78)
+- **Проблема:** Метод пустой с комментарием "оставляем заглушку"
+- **Риск:** Пользователи не получают уведомлений при потере доступа к группе
+- **Решение:** Реализовать отправку через `SendNotificationCommand`
+
+---
+
+## ВЫСОКОПРИОРИТЕТНЫЕ ПРОБЛЕМЫ (влияют на функциональность)
+
+### H1. Отсутствует REST API для фильтров
+- **Файл:** `services/aivalone-backend/src/Context/Monitoring/Presentation/Controller/` — **ПУСТО**
+- **Спецификация требует:**
+  - `POST /api/monitoring/filters`
+  - `GET /api/monitoring/filters`
+  - `GET /api/monitoring/filters/{id}`
+  - `PUT /api/monitoring/filters/{id}`
+  - `DELETE /api/monitoring/filters/{id}`
+  - `PATCH /api/monitoring/filters/{id}/toggle`
+- **Текущее состояние:** API только через Bot Port (FiltersPortInterface)
+- **Решение:** Создать `FilterController` с CRUD операциями
+
+### H2. Отсутствует поле `name` в модели Filter
+- **Файл:** [Filter.php](services/aivalone-backend/src/Context/Monitoring/Domain/Model/Filter.php)
+- **Спецификация:** Filter должен иметь поле `name` для названия фильтра
+- **Текущее состояние:** Поле отсутствует
+- **Решение:** Добавить `private string $name;` и соответствующие методы
+
+### H3. Отсутствует интеграция с Billing для проверки тарифов
+- **Спецификация:** Стратегии ограничены по тарифам:
+  - Free: только `simple`
+  - Base: `simple` + `morpho`
+  - Premium: все стратегии
+- **Текущее состояние:** Проверка тарифов отсутствует
+- **Решение:** Добавить Port для Billing и проверку в BroadcastMatcher/FilterService
+
+### H4. Поля createdAt/updatedAt только в ORM, не в Domain
+- **Файлы:**
+  - [Filter.php](services/aivalone-backend/src/Context/Monitoring/Domain/Model/Filter.php)
+  - [Session.php](services/aivalone-backend/src/Context/Monitoring/Domain/Model/Session.php)
+  - [GroupConnection.php](services/aivalone-backend/src/Context/Monitoring/Domain/Model/GroupConnection.php)
+- **Проблема:** createdAt/updatedAt есть в ORM-сущностях, но не передаются в доменные модели
+- **Решение:** Добавить поля в конструкторы и методы доменных моделей
+
+---
+
+## СРЕДНИЕ ПРОБЛЕМЫ (качество/поддерживаемость)
+
+### M1. Нарушение SRP в IncomingTelegramMessageHandler
+- **Файл:** [IncomingTelegramMessageHandler.php:52-62](services/aivalone-backend/src/Context/Monitoring/Application/EventHandler/IncomingTelegramMessageHandler.php)
+- **Проблема:** Метод `formatNotification()` не относится к обработке событий
+- **Решение:** Вынести в отдельный класс `NotificationFormatter`
+
+### M2. Дублирование кода в IntersectionMapService
+- **Файл:** [IntersectionMapService.php](services/aivalone-backend/src/Context/Monitoring/Application/Service/IntersectionMapService.php)
+- **Проблема:** Паттерн получения сессий по ID повторяется 3 раза
+- **Решение:** Выделить приватный метод `getSessionsByConnectionIds()`
+
+### M3. Стратегии как string константы вместо Enum
+- **Файл:** [Filter.php:8-10](services/aivalone-backend/src/Context/Monitoring/Domain/Model/Filter.php#L8-L10)
+- **Проблема:** `STRATEGY_SIMPLE`, `STRATEGY_MORPHO`, `STRATEGY_AI` - константы
+- **Решение:** Создать `FilterStrategy` enum (PHP 8.1+)
+
+### M4. Отсутствуют тесты для EventHandlers
+- **Проблема:** Нет unit-тестов для `IncomingTelegramMessageHandler` и `AccessLostEventHandler`
+- **Решение:** Создать тесты в `tests/Context/Monitoring/Application/EventHandler/`
+
+### M5. MorphoStrategy и AIStrategy — заглушки
+- **Файл:** [MatchStrategyFactory.php](services/aivalone-backend/src/Context/Monitoring/Domain/Service/MatchStrategyFactory.php)
+- **Проблема:** `$morphoStrategy: null`, `$aiStrategy: null` — fallback на simple
+- **Решение:** Реализовать или явно документировать как future feature
+
+---
+
+## НИЗКОПРИОРИТЕТНЫЕ ПРОБЛЕМЫ (косметические)
+
+| # | Проблема | Файл | Решение |
+|---|----------|------|---------|
+| L1 | Валидация типов через in_array | Filter, Session, GroupConnection | Использовать PHP Enum |
+| L2 | countBySessionIdSince в общем интерфейсе | GroupConnectionRepositoryInterface | Выделить в JoinQueueRepositoryInterface |
+| L3 | Нет readonly для свойств | Domain models | Добавить readonly (PHP 8.1+) |
+| L4 | Неполная документация методов | Разные файлы | Добавить DocBlocks |
+
+---
+
+## АНАЛИЗ SOLID
+
+| Принцип | Оценка | Комментарий |
+|---------|--------|-------------|
+| **S** - Single Responsibility | 8/10 | Нарушение в IncomingTelegramMessageHandler (formatNotification) |
+| **O** - Open/Closed | 9/10 | Strategy pattern реализован хорошо |
+| **L** - Liskov Substitution | 10/10 | Нарушений не обнаружено |
+| **I** - Interface Segregation | 8/10 | countBySessionIdSince можно выделить |
+| **D** - Dependency Inversion | 9/10 | Все сервисы зависят от интерфейсов |
+
+## АНАЛИЗ DRY
+
+| Дублирование | Серьёзность | Решение |
+|--------------|-------------|---------|
+| Валидация strategy/type/status | LOW | PHP Enum |
+| Паттерн получения сессий в IntersectionMapService | MEDIUM | Приватный метод |
+| toDomain/fromDomain в ORM entities | LOW | Можно оставить (паттерн проекта) |
+
+## АНАЛИЗ KISS
+
+- **Общая оценка:** 9/10
+- Код простой и понятный
+- Единственное замечание: логика failover в AccessLostEventHandler можно разбить на меньшие методы
+
+---
+
+## ПЛАН РАБОТ ПО ПРИОРИТЕТУ
+
+### Фаза 1: Критические исправления (немедленно)
+1. [ ] **C1** — Шифрование sessionString
+2. [ ] **C2** — Реализация notifyFilterOwners()
+
+### Фаза 2: Высокий приоритет (следующий спринт)
+3. [ ] **H2** — Добавить поле name в Filter
+4. [ ] **H4** — Добавить createdAt/updatedAt в доменные модели
+5. [ ] **H3** — Интеграция с Billing для проверки тарифов
+6. [ ] **H1** — REST API для фильтров (FilterController)
+
+### Фаза 3: Качество кода
+7. [ ] **M1** — Вынести NotificationFormatter
+8. [ ] **M2** — Рефакторинг IntersectionMapService
+9. [ ] **M3** — Перевести стратегии на PHP Enum
+10. [ ] **M4** — Тесты для EventHandlers
+
+### Фаза 4: Технический долг
+11. [ ] **M5** — Реализация MorphoStrategy/AIStrategy (по требованию)
+12. [ ] **L1-L4** — Косметические улучшения
+
+---
+
+## КРИТИЧЕСКИЕ ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЯ
+
+| Приоритет | Файл | Изменения |
+|-----------|------|-----------|
+| CRITICAL | [Session.php](services/aivalone-backend/src/Context/Monitoring/Domain/Model/Session.php) | Шифрование sessionString |
+| CRITICAL | [AccessLostEventHandler.php](services/aivalone-backend/src/Context/Monitoring/Application/EventHandler/AccessLostEventHandler.php) | Реализовать notifyFilterOwners() |
+| HIGH | [Filter.php](services/aivalone-backend/src/Context/Monitoring/Domain/Model/Filter.php) | Добавить name, createdAt, updatedAt |
+| HIGH | [FilterOrmEntity.php](services/aivalone-backend/src/Context/Monitoring/Infrastructure/Entity/FilterOrmEntity.php) | Обновить маппинг |
+| HIGH | **СОЗДАТЬ** `Presentation/Controller/FilterController.php` | REST API |
+| MEDIUM | [IncomingTelegramMessageHandler.php](services/aivalone-backend/src/Context/Monitoring/Application/EventHandler/IncomingTelegramMessageHandler.php) | Вынести formatNotification |
+| MEDIUM | [IntersectionMapService.php](services/aivalone-backend/src/Context/Monitoring/Application/Service/IntersectionMapService.php) | Убрать дублирование |
+
+---
+
+## ВЕРИФИКАЦИЯ
+
+После внесения изменений:
+1. Запустить тесты: `make test` или `./vendor/bin/phpunit`
+2. Проверить static analysis: `./vendor/bin/phpstan analyse`
+3. Проверить code style: `./vendor/bin/php-cs-fixer fix --dry-run`
+4. Протестировать failover вручную через симуляцию AccessLostEvent
+5. Проверить шифрование sessionString через unit-тест
+6. Скорректировать документацию (спецификацию) при необходимости.
+
+* запуск тестов и других утилит необходимо выполнять в docker контейнере.
