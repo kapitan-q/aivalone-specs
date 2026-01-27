@@ -1,0 +1,224 @@
+# Task #00016: Мультимессенджерная поддержка в Bot контексте
+
+## Цель
+Убрать жёсткую привязку к `telegramId` и обеспечить поддержку множества мессенджеров (Telegram, WhatsApp, etc.). Изменить идентификацию пользователей с `telegramId: int` на пару `(messenger: Messenger, messengerUserId: string)`.
+
+**Ключевое решение:** Тип `messengerUserId` — `string` для универсальности (Telegram int64 приводится к string, WhatsApp может использовать телефон, Discord — snowflake).
+
+---
+
+## Архитектурные решения
+
+### 1. Хранение связей User ↔ Messengers
+**Решение: Отдельная таблица `user_messengers`**
+
+```sql
+CREATE TABLE user_messengers (
+    id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    messenger VARCHAR(32) NOT NULL,           -- 'telegram', 'whatsapp', etc.
+    messenger_user_id VARCHAR(128) NOT NULL,  -- ID в мессенджере (string)
+    display_name VARCHAR(255) DEFAULT NULL,
+    created_at TIMESTAMP NOT NULL,
+    UNIQUE(messenger, messenger_user_id)
+);
+```
+
+### 2. Enum Messenger в Shared контексте
+```php
+enum Messenger: string {
+    case TELEGRAM = 'telegram';
+    case WHATSAPP = 'whatsapp';
+}
+```
+
+### 3. BotUser без привязки к мессенджеру
+BotUser идентифицируется через `UserId`. Привязка к мессенджеру — на уровне входящего запроса `BotRequest`.
+
+---
+
+## Файлы для изменения
+
+### Новые файлы
+
+| Файл | Назначение |
+|------|------------|
+| `Shared/Domain/ValueObject/Messenger.php` | Enum мессенджеров |
+| `Account/Domain/Model/UserMessenger.php` | Доменная модель связи User↔Messenger |
+| `Account/Infrastructure/Entity/UserMessengerOrmEntity.php` | ORM Entity |
+| `Account/Domain/Repository/UserMessengerRepositoryInterface.php` | Интерфейс репозитория |
+| `Account/Infrastructure/Persistence/UserMessengerRepository.php` | Реализация репозитория |
+| `migrations/Version20260127000001.php` | Миграция: создание таблицы + перенос данных |
+| `migrations/Version20260127000002.php` | Миграция: удаление telegramId из users |
+
+### Изменяемые файлы
+
+| Файл | Изменения |
+|------|-----------|
+| `Bot/Application/DTO/BotRequest.php` | +`Messenger $messenger`, `int $userId` → `string $messengerUserId` |
+| `Bot/Application/Port/Account/AccountPortInterface.php` | Новые методы: `getUserByMessenger()`, `registerUser(Messenger, string)`, `getOrCreateUser(Messenger, string)` |
+| `Bot/Infrastructure/Account/AccountPort.php` | Реализация новых методов |
+| `Bot/Domain/Model/BotUser.php` | Удалить `$telegramId` |
+| `Bot/Domain/Messenger/BotInterface.php` | `sendMessage(string $messengerUserId, ...)` |
+| `Bot/Infrastructure/Messenger/TelegramAdapter.php` | Создание BotRequest с `Messenger::TELEGRAM` |
+| `Bot/Application/Service/BotRouter.php` | Использование `getMessenger()` и `getMessengerUserId()` |
+| `Account/Domain/Model/User.php` | Удалить `$telegramId` |
+| `Account/Infrastructure/Entity/UserOrmEntity.php` | Удалить поле `telegramId` |
+| `Account/Domain/Repository/UserRepositoryInterface.php` | Удалить методы с telegramId |
+| `Account/Infrastructure/Persistence/UserRepository.php` | Удалить методы с telegramId |
+| `Account/Application/Service/UserService.php` | Новые методы: `getUserByMessenger()`, `registerUser(Messenger, string)` |
+| `Bot/Application/Conversation/*.php` | Все диалоги: использование нового API |
+
+---
+
+## Детальные изменения
+
+### 1. BotRequest (Bot/Application/DTO/BotRequest.php)
+
+```php
+class BotRequest
+{
+    public function __construct(
+        private Messenger $messenger,           // НОВОЕ
+        private string $messengerUserId,        // ИЗМЕНЕНО: int $userId -> string
+        private string $message,
+        private ?string $command = null,
+        private ?string $step = null,
+        private array $params = [],
+        private array $metadata = [],
+    ) {}
+
+    public function getMessenger(): Messenger { return $this->messenger; }
+    public function getMessengerUserId(): string { return $this->messengerUserId; }
+}
+```
+
+### 2. AccountPortInterface (Bot/Application/Port/Account/AccountPortInterface.php)
+
+```php
+interface AccountPortInterface
+{
+    public function getUserByMessenger(Messenger $messenger, string $messengerUserId): ?BotUser;
+    public function getUserById(UserId $id): ?BotUser;
+    public function registerUser(Messenger $messenger, string $messengerUserId): BotUser;
+    public function getOrCreateUser(Messenger $messenger, string $messengerUserId): BotUser;
+}
+```
+
+### 3. User (Account/Domain/Model/User.php)
+
+```php
+class User implements UserInterface
+{
+    public function __construct(
+        private UserId $id,
+        private array $effectiveTariffCodes = ['FREE']  // telegramId УДАЛЁН
+    ) {}
+}
+```
+
+### 4. BotUser (Bot/Domain/Model/BotUser.php)
+
+```php
+class BotUser implements UserInterface
+{
+    public function __construct(
+        private readonly UserId $id,
+        private readonly array $effectiveTariffCodes = ['FREE']
+        // telegramId УДАЛЁН
+    ) {}
+}
+```
+
+### 5. TelegramAdapter (Bot/Infrastructure/Messenger/TelegramAdapter.php)
+
+```php
+public function parseRequest(array $update): ?BotRequest
+{
+    // ...
+    return new BotRequest(
+        messenger: Messenger::TELEGRAM,
+        messengerUserId: (string) $from['id'],
+        message: $text,
+        // ...
+    );
+}
+```
+
+### 6. BotRouter (Bot/Application/Service/BotRouter.php)
+
+```php
+private function resolveUser(BotRequest $request, BotInterface $adapter): ?BotUser
+{
+    $user = $this->accountPort->getUserByMessenger(
+        $request->getMessenger(),
+        $request->getMessengerUserId()
+    );
+    // ...
+}
+```
+
+---
+
+## Порядок выполнения
+
+### Фаза 1: Подготовка инфраструктуры
+1. Создать `Messenger` enum
+2. Создать `UserMessenger` модель и ORM Entity
+3. Создать `UserMessengerRepositoryInterface` и реализацию
+4. Выполнить миграцию 1 (создание таблицы + перенос данных)
+5. Обновить `config/services.yaml`
+
+### Фаза 2: Расширение API
+6. Расширить `UserService` новыми методами
+7. Расширить `AccountPortInterface` новыми методами
+8. Обновить `AccountPort` реализацию
+
+### Фаза 3: Обновление BotRequest и адаптеров
+9. Обновить `BotRequest` DTO
+10. Обновить `BotInterface` — `sendMessage(string $messengerUserId, ...)`
+11. Обновить `TelegramAdapter`
+
+### Фаза 4: Обновление потребителей
+12. Обновить `BotRouter`
+13. Обновить все Conversations
+
+### Фаза 5: Удаление legacy
+14. Удалить `$telegramId` из `BotUser`
+15. Удалить `$telegramId` из `User` и `UserOrmEntity`
+16. Удалить методы с telegramId из репозиториев
+17. Выполнить миграцию 2 (удаление колонки)
+
+### Фаза 6: Обновление документации
+Обновить документацию при необходимости
+
+---
+
+## Верификация
+
+### Запуск тестов
+```bash
+cd services/aivalone-backend
+make test
+```
+
+### Проверка миграций
+```bash
+make migrate
+```
+
+### Ручное тестирование
+1. Отправить `/start` в Telegram бот — должен создаться пользователь
+2. Проверить в БД: запись в `user_messengers` с `messenger='telegram'`
+3. Отправить другую команду — пользователь должен найтись по messenger + messengerUserId
+
+---
+
+## Миграция данных
+
+Существующие `users.telegram_id` будут автоматически перенесены в `user_messengers`:
+```sql
+INSERT INTO user_messengers (id, user_id, messenger, messenger_user_id, created_at)
+SELECT gen_random_uuid()::text, id, 'telegram', telegram_id::text, created_at
+FROM users WHERE telegram_id IS NOT NULL
+```
