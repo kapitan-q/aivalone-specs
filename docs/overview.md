@@ -17,7 +17,7 @@
    - Мониторинг и фильтрация контента (Monitoring Context)
    - Общие компоненты (Shared Context)
 
-2. **Python Service (Telegram Bridge)** - Специализированный сервис для прямого взаимодействия с Telegram API
+2. **Bridge Service (Telegram, Whatsapp)** - Специализированный сервис для прямого взаимодействия с Telegram API
    - Мониторинг новых сообщений в группах
    - Выполнение команд от PHP-сервиса
 
@@ -29,8 +29,8 @@
 
 - **Backend:** PHP 8.3, Symfony 8.0
 - **База данных:** PostgreSQL 16
-- **Кэш/Очереди:** Redis
-- **Очереди для Python-bridge:** RabbitMQ (AMQP)
+- **Кэш:** Redis
+- **Очереди**: RabbitMQ (AMQP)
 - **Почтовый сервис:** MailHog (для разработки)
 - **Веб-сервер:** Nginx
 - **Telegram Engine:** Python 3.x (Telethon/Pyrogram)
@@ -51,8 +51,4 @@ services/
 ## Связанные документы
 
 - [Архитектура DDD](architecture.md)
-- [Account Context](../backend/account/overview.md)
-- [Billing Context](../backend/billing/overview.md)
-- [Bot Context](../backend/bot/overview.md)
-- [Monitoring Context](../backend/monitoring/overview.md)
-- [Shared Context](../backend/shared/overview.md)
+- [Backend](backend/overview.md)

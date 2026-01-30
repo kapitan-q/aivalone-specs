@@ -10,7 +10,7 @@
 
 ```
 Context/
-├── Domain/              # Доменный слой (чистые модели, интерфейсы)
+├── Domain/             # Доменный слой (чистые модели, интерфейсы)
 │   ├── Model/          # Доменные модели
 │   └── Repository/     # Интерфейсы репозиториев
 ├── Application/        # Слой приложения (use cases, сервисы)
@@ -35,8 +35,6 @@ Context/
 - Использование Value Objects для типизации (например, `UserId`)
 - Доменная модель отделена от ORM Entity
 
-**Пример:** `App\Context\Account\Domain\Model\User`
-
 ### 2. Application Layer (Слой приложения)
 
 **Назначение:** Содержит use cases и бизнес-логику приложения.
@@ -45,8 +43,6 @@ Context/
 - Координирует работу доменных моделей
 - Использует интерфейсы из Domain слоя
 - Подготовлен для CQRS (разделение Command и Query)
-
-**Пример:** `App\Context\Account\Application\Service\UserService`
 
 ### 3. Infrastructure Layer (Слой инфраструктуры)
 
@@ -57,8 +53,6 @@ Context/
 - Внешние интеграции (API, очереди)
 - Преобразование между доменной моделью и ORM Entity через методы `toDomain()` и `fromDomain()`
 
-**Пример:** `App\Context\Account\Infrastructure\Persistence\UserRepository`
-
 ### 4. Presentation Layer (Слой представления)
 
 **Назначение:** REST API контроллеры и обработка HTTP-запросов.
@@ -68,20 +62,19 @@ Context/
 - Сериализация ответов
 - Не содержит бизнес-логики
 
-**Пример:** `App\Context\Account\Presentation\Controller\UserController`
-
 ## Разделение доменной модели и ORM Entity
 
-Важно: доменная модель (`Domain\Model\User`) и ORM Entity (`Infrastructure\Entity\UserOrmEntity`) разделены.
+Важно: доменная модель и ORM Entity разделены.
 
 **Преимущества:**
-- Доменная модель остается независимой от Doctrine
+- Доменная модель остается независимой от ORM-фреймворка
 - Легко менять способ персистентности (БД, файлы, API)
 - Тестирование доменной логики без БД
 
 **Преобразование:**
 - `toDomain()` - преобразование ORM Entity в доменную модель
 - `fromDomain()` - преобразование доменной модели в ORM Entity
+- **Важно** При сложных преобразованиях имеет смысл выносить логику преобразования в отдельный mapper
 
 ## Межконтекстное взаимодействие
 
@@ -89,14 +82,8 @@ Context/
 
 1. **Изоляция контекстов:** Каждый контекст максимально независим
 2. **Общие компоненты:** Выносятся в Shared Context
-3. **Асинхронное взаимодействие:** Используется Symfony Messenger для команд и событий
+3. **Асинхронное взаимодействие:** Используется общую шину для команд и событий
 4. **Порты и адаптеры:** Используются интерфейсы (Ports) для взаимодействия между контекстами
-
-### Примеры взаимодействия
-
-- **Billing → Account:** События об изменении прав (`UserPermissionsUpdatedEvent`)
-- **Monitoring → Bot:** Команды на отправку уведомлений (`SendNotificationCommand`)
-- **Bot → Account:** Проверка прав пользователя через `AccountPortInterface`
 
 ## Масштабируемость
 
@@ -108,8 +95,3 @@ Context/
 ## Связанные документы
 
 - [Обзор проекта](overview.md)
-- [Account Context](../backend/account/overview.md)
-- [Billing Context](../backend/billing/overview.md)
-- [Bot Context](../backend/bot/overview.md)
-- [Monitoring Context](../backend/monitoring/overview.md)
-- [Shared Context](../backend/shared/overview.md)
