@@ -7,27 +7,27 @@
 
 ## Основные методы
 
-### registerUser(messengerCode, messengerId)
+### registerUser(Messanger messenger, messengerId)
 
-Регистрация пользователя согласно спецификации процесса `CreateUser`
+Регистрация пользователя согласно спецификации процесса [CreateUser](../processes/create-user.md)
 
-### addMessenger(userId, messengerCode, messengerId)
+### addMessenger(UserId userId, Messanger messenger, messengerId)
 
-Добавление нового мессенджера согласно процессу `AddUserMessengerProcess`
+Добавление нового мессенджера согласно процессу [AddUserMessenger](../processes/add-user-messenger.md)
 
-### removeMessenger(userId, messengerCode, messengerId)
+### removeMessenger(UserId userId, Messanger messenger, messengerId)
 
-Удаление указанного мессенджера у пользователя согласно процессу `RemoveUserMessengerProcess`
+Удаление указанного мессенджера у пользователя согласно процессу [RemoveUserMessenger](../processes/remove-user-messenger.md)
 
-### updateTariffs(userId, tariffCodes[])
+### updateTariffs(UserId userId, tariffCodes[])
 
-Обновление списка тарифов пользователя согласно процессу `UpdateUserTariffs`
+Обновление списка тарифов пользователя согласно процессу [UpdateUserTariffs](../processes/update-user-tariffs.md)
 
 ## Особенности
 
 * Все изменения пользователя фиксируют дату изменения (`updatedAt`) и сохраняют дату создания (`createdAt`).
-* Сервис оперирует только агрегатом `User` и вложенной моделью `UserMessenger`.
-* Все бизнес-инварианты модели User гарантируются в сервисе, включая уникальность мессенджеров и корректность тарифов.
+* Сервис оперирует только агрегатом [User](../model/user.md) и вложенной моделью `UserMessenger`.
+* Все бизнес-инварианты модели `User` гарантируются в сервисе, включая уникальность мессенджеров и корректность тарифов.
 * Публикация событий осуществляется через EventBus
 
 ## Слои взаимодействия
@@ -40,10 +40,8 @@
 
 * [Сервисы Account Context](./overview.md)
 * [User](../model/user.md)
-* [CreateUserProcess](../processes/create-user.md)
-* [AddMessengerProcess](../processes/add-user-messenger.md)
-* [RemoveMessengerProcess](../processes/remove-user-messenger.md)
-* [UpdateUserTariffs](../processes/update-user-tariffs.md)
+* [UserId](../model/user-id.md)
+* [Messenger](../../shared/models/messenger.md)
 
 ## Статус
 

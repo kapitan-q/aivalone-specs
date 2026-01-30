@@ -30,8 +30,8 @@
 
 ## Исключения / Ошибки
 
-* Если `messengerCode` или `messengerId` отсутствуют — генерация `ValidationException`.
-* Если пользователь с данным `messengerCode` и `messengerId` уже существует — генерация `DuplicateUserException`.
+* Если `messengerCode` или `messengerId` отсутствуют — генерация [ValidationException](../../shared/exceptions/validation-exception.md).
+* Если пользователь с данным `messengerCode` и `messengerId` уже существует — генерация [DuplicateUserException](../exceptions/duplicate-user-exception.md).
 
 ## Примечания
 

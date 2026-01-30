@@ -34,8 +34,8 @@
 
 ## Исключения / Ошибки
 
-* Пользователь не найден — выбрасывается `UserNotFoundException`.
-* Мессенджер не найден у пользователя — выбрасывается `MessengerNotFoundException`.
+* Пользователь не найден — выбрасывается [UserNotFoundException](../exceptions/user-not-found-exception.md).
+* Мессенджер не найден у пользователя — выбрасывается [MessengerNotFoundException](../exceptions/messenger-not-found-exception.md).
 
 ## Примечания
 

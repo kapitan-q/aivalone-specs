@@ -29,8 +29,8 @@
 
 ## Исключения / Ошибки
 
-* Пользователь не найден — выбрасывается `UserNotFoundException`.  
-* Некорректные тарифы — выбрасывается `ValidationException`.  
+* Пользователь не найден — выбрасывается [UserNotFoundException](../exceptions/user-not-found-exception.md).
+* Некорректные тарифы — выбрасывается [ValidationException](../../shared/exceptions/validation-exception.md).
 
 ## Связанные документы
 
