@@ -19,3 +19,7 @@
 
 - [Shared Context Overview](../overview.md)
 - [Исключения](./overview.md)
+
+## Статус
+
+* [x] Реализация исключения DomainException

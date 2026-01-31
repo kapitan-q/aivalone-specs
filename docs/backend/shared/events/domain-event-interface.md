@@ -73,5 +73,5 @@ Payload используется:
 
 ## Статус
 
-* [] Определён интерфейс `DomainEventInterface`
-* [] Покрыт unit-тестами
+* [x] Определён интерфейс `DomainEventInterface`
+* [ ] Покрыт unit-тестами

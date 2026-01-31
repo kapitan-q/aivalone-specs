@@ -6,9 +6,9 @@
 
 ## Требования
 
-- [ ] Класс должен наследоваться от `DomainException`
-- [ ] Должен быть расположен в `src/Context/Shared/Domain/Exception/ValidationException.php`
-- [ ] Используется для сигнализации о нарушении инвариантов Value Object или Entity
+- [x] Класс должен наследоваться от `DomainException`
+- [x] Должен быть расположен в `src/Context/Shared/Domain/Exception/ValidationException.php`
+- [x] Используется для сигнализации о нарушении инвариантов Value Object или Entity
 
 ## Реализация
 
@@ -39,4 +39,4 @@ throw new ValidationException("Некорректный формат");
 
 ## Статус
 
-not-started
+done

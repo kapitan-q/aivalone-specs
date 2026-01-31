@@ -28,4 +28,4 @@
 
 ## Статус
 
-* [] Реализация исключения DuplicateUserException
+* [x] Реализация исключения DuplicateUserException

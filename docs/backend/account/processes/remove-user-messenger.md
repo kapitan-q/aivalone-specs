@@ -15,32 +15,41 @@
 
 ## Поток выполнения
 
-1. **Валидация данных**
+1. **Обработка команды** (Command Handler)
+   * Проверка наличия `userId`, `messengerCode`, и `messengerId`.
+   * Конвертация `userId` в `UserId`, `messengerCode` в `Messenger`.
+   * Делегация в `UserService::removeMessenger()`
 
-   * Проверка существования пользователя по `UserId`.
-   * Проверка, что указанный мессенджер привязан к пользователю.
+2. **Получение пользователя** (UserService — Application Layer)
+   * Получение пользователя из репозитория через `UserRepository::findById(UserId)`.
+   * Выброс `UserNotFoundException` если пользователь не найден.
 
-2. **Удаление мессенджера**
+3. **Удаление мессенджера** (Domain Layer)
+   * Вызов метода `User::removeMessenger(Messenger $messenger, string $messengerId)`.
+   * Метод удаляет объект `UserMessenger` из коллекции пользователя согласно модели.
+   * Если мессенджер не найден, выбросится `MessengerNotFoundException`.
+   * Если это последний оставшийся мессенджер, выбросится `AtLeastOneMessengerRequiredException` (нарушение инварианта).
+   * Автоматически записывается событие `UserMessengersUpdated` в агрегат.
 
-   * Вызов сервиса `UserService::removeMessenger(userId, messengerCode, messengerId)`.
-   * `UserService` удаляет объект `UserMessenger` из коллекции пользователя согласно модели.
-
-3. **Сохранение изменений пользователя**
-
+4. **Сохранение изменений пользователя** (UserService → Infrastructure Layer)
    * Сохранение пользователя и вложенных данных через `UserRepository::save(User)`.
 
-4. **Публикация событий**
-   * Публикация накопленных событий доменной модели
+5. **Публикация событий** (UserService)
+   * Вызов `user->pullEvents()` для получения накопленных событий.
+   * Публикация событий через `EventBus::publish()`.
 
 ## Исключения / Ошибки
 
 * Пользователь не найден — выбрасывается [UserNotFoundException](../exceptions/user-not-found-exception.md).
 * Мессенджер не найден у пользователя — выбрасывается [MessengerNotFoundException](../exceptions/messenger-not-found-exception.md).
+* Попытка удалить последний мессенджер — выбрасывается [AtLeastOneMessengerRequiredException](../exceptions/at-least-one-messenger-required-exception.md).
 
 ## Примечания
 
 * Процесс является частью **Application Layer**.
-* `UserService` отвечает за все бизнес-инварианты модели `User`.
+* Command Handler конвертирует входные данные и делегирует работу в UserService.
+* UserService выполняет полный цикл: получение пользователя → изменение модели → сохранение → публикация событий.
+* User Model гарантирует, что при попытке удалить несуществующий мессенджер будет выброшено `MessengerNotFoundException`.
 
 ## Связанные документы
 

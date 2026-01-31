@@ -10,6 +10,7 @@
 - [ValidationException](./validation-exception.md) — базовое исключение для ошибок валидации.
 - [InvalidMessengerException](./invalid-messenger-exception.md) — выбрасывается при попытке создать Messenger с неподдерживаемым кодом.
 - [InvalidUuidException](./invalid-uuid-exception.md) — выбрасывается при передаче невалидного UUID.
+- [TariffValidationException](./tariff-validation-exception.md) — выбрасывается при попытке конвертировать некорректный код в объект Tariff.
 
 ## Связанные документы
 

@@ -6,10 +6,10 @@
 
 ## Требования
 
-- [ ] Интерфейс должен быть расположен в `src/Context/Shared/Domain/Event/DomainEventInterface.php`
-- [ ] События должны быть immutable
-- [ ] События не должны знать об инфраструктуре
-- [ ] События должны быть сериализуемыми в array
+- [x] Интерфейс должен быть расположен в `src/Context/Shared/Domain/Event/DomainEventInterface.php`
+- [x] События должны быть immutable
+- [x] События не должны знать об инфраструктуре
+- [x] События должны быть сериализуемыми в array
 
 ## Интерфейс
 
@@ -26,16 +26,16 @@ interface DomainEventInterface
 
 ## Требования
 
-- [ ] `getEventName()` - возвращает уникальное имя события (например, 'user.registered')
-- [ ] `getOccurredAt()` - возвращает дату/время произошедшего события
-- [ ] `getPayload()` - возвращает сериализуемые данные события
+- [x] `getEventName()` - возвращает уникальное имя события (например, 'user.registered')
+- [x] `getOccurredAt()` - возвращает дату/время произошедшего события
+- [x] `getPayload()` - возвращает сериализуемые данные события
 
 ## Соглашения
 
-- [ ] Имена событий должны быть в формате `domain.action` (например, `user.registered`, `user.messengers.updated`)
-- [ ] События именуются в прошедшем времени
-- [ ] Payload содержит только сериализуемые данные (строки, числа, массивы, null)
-- [ ] Payload НЕ содержит доменные объекты или ORM сущности
+- [x] Имена событий должны быть в формате `domain.action` (например, `user.registered`, `user.messengers.updated`)
+- [x] События именуются в прошедшем времени
+- [x] Payload содержит только сериализуемые данные (строки, числа, массивы, null)
+- [x] Payload НЕ содержит доменные объекты или ORM сущности
 
 ## Примеры событий
 
@@ -88,4 +88,4 @@ class UserRegistered implements DomainEventInterface
 
 ## Статус
 
-not-started
+done

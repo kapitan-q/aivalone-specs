@@ -15,20 +15,28 @@
 
 ## Поток выполнения
 
-1. **Валидация данных**
-   * Проверка наличия `messenger` и `messengerId`.
-   * Проверка существования пользователя по `UserId`.
-   * Проверка уникальности комбинации `messenger` + `messengerId`.
+1. **Обработка команды** (Command Handler)
+   * Проверка наличия `userId`, `messengerCode`, и `messengerId`.
+   * Конвертация `userId` в `UserId`, `messengerCode` в `Messenger`.
+   * Делегация в `UserService::addMessenger()`
 
-2. **Добавление мессенджера**
-   * Вызов сервиса `UserService::addMessenger(UserId userId, Messenger messenger, messengerId)`.
-   * `UserService` создает новый объект `UserMessenger` и добавляет его к пользователю согласно модели.
+2. **Проверка уникальности и получение пользователя** (UserService — Application Layer)
+   * **Проверка уникальности комбинации `messenger` + `messengerId` в системе** через `UserRepository::findByMessenger()`.
+   * Выброс `DuplicateMessengerException` если мессенджер уже привязан к другому пользователю.
+   * Получение пользователя из репозитория через `UserRepository::findById(UserId)`.
+   * Выброс `UserNotFoundException` если пользователь не найден.
 
-3. **Сохранение изменений пользователя**
+3. **Добавление мессенджера** (Domain Layer)
+   * Вызов метода `User::addMessenger(Messenger $messenger, string $messengerId)`.
+   * Метод добавляет новый объект `UserMessenger` к пользователю согласно модели.
+   * Автоматически записывается событие `UserMessengersUpdated` в агрегат.
+
+4. **Сохранение изменений пользователя** (UserService → Infrastructure Layer)
    * Сохранение пользователя и вложенных данных через `UserRepository::save(User)`.
 
-4. **Публикация событий**
-   * Публикация накопленных событий доменной модели
+5. **Публикация событий** (UserService)
+   * Вызов `user->pullEvents()` для получения накопленных событий.
+   * Публикация событий через `EventBus::publish()`.
 
 ## Исключения / Ошибки
 
@@ -39,7 +47,9 @@
 ## Примечания
 
 * Процесс является частью **Application Layer**.
-* `UserService` отвечает за все бизнес-инварианты модели `User`.
+* Command Handler конвертирует входные данные и делегирует работу в UserService.
+* UserService выполняет полный цикл: проверка уникальности → получение пользователя → изменение модели → сохранение → публикация событий.
+* Проверка уникальности мессенджера выполняется **ДО изменения модели** (в UserService).
 
 ## Связанные документы
 

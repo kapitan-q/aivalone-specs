@@ -28,4 +28,4 @@
 
 ## Статус
 
-* [] Реализация исключения DuplicateMessengerException
+* [x] Реализация исключения DuplicateMessengerException

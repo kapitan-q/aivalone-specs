@@ -6,9 +6,9 @@
 
 ## Требования
 
-- [ ] Класс должен быть расположен в `src/Context/Shared/Presentation/Http/Controller/HealthCheckController.php`
-- [ ] Реализовать GET endpoint `/health`
-- [ ] Возвращать JSON ответ с статусом сервиса
+- [x] Класс должен быть расположен в `src/Context/Shared/Presentation/Http/Controller/HealthCheckController.php`
+- [x] Реализовать GET endpoint `/health`
+- [x] Возвращать JSON ответ с статусом сервиса
 
 ## Интерфейс
 
@@ -35,11 +35,11 @@ Response (200 OK):
 
 ## Требования
 
-- [ ] HTTP метод: GET
-- [ ] Route: `/health`
-- [ ] Response code: 200 OK
-- [ ] Response format: JSON
-- [ ] Должно содержать:
+- [x] HTTP метод: GET
+- [x] Route: `/health`
+- [x] Response code: 200 OK
+- [x] Response format: JSON
+- [x] Должно содержать:
   - `status` - статус сервиса ('ok')
   - `timestamp` - текущее время в ISO 8601
   - `service` - имя сервиса
@@ -91,4 +91,4 @@ curl -X GET http://localhost/health
 
 ## Статус
 
-not-started
+done

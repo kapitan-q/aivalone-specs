@@ -6,10 +6,10 @@
 
 ## Требования
 
-- [ ] Класс должен наследоваться от `ValidationException`
-- [ ] Должен быть расположен в `src/Context/Shared/Domain/Exception/InvalidUuidException.php`
-- [ ] Выбрасывается при попытке создать UUID с невалидным форматом
-- [ ] Может использоваться не только для UUID, но и для ID основанных на UUID
+- [x] Класс должен наследоваться от `ValidationException`
+- [x] Должен быть расположен в `src/Context/Shared/Domain/Exception/InvalidUuidException.php`
+- [x] Выбрасывается при попытке создать UUID с невалидным форматом
+- [x] Может использоваться не только для UUID, но и для ID основанных на UUID
 
 ## Реализация
 
@@ -43,4 +43,4 @@ throw InvalidUuidException::invalidFormat($value);
 
 ## Статус
 
-not-started
+done

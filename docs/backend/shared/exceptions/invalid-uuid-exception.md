@@ -31,4 +31,4 @@
 
 ## Статус
 
-* [] Реализация исключения InvalidUuidException
+* [x] Реализация исключения InvalidUuidException

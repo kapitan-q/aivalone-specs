@@ -29,4 +29,4 @@
 
 ## Статус
 
-* [] Реализация исключения UserNotFoundException
+* [x] Реализация исключения UserNotFoundException

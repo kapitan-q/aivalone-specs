@@ -29,4 +29,4 @@
 
 ## Статус
 
-* [] Реализация исключения TariffValidationException
+* [x] Реализация исключения TariffValidationException (в Shared Context)

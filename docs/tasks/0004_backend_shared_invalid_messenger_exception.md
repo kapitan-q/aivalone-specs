@@ -6,10 +6,10 @@
 
 ## Требования
 
-- [ ] Класс должен наследоваться от `ValidationException`
-- [ ] Должен быть расположен в `src/Context/Shared/Domain/Exception/InvalidMessengerException.php`
-- [ ] Выбрасывается при попытке создать Messenger с неподдерживаемым кодом
-- [ ] Должен содержать static методы для создания с различными контекстами
+- [x] Класс должен наследоваться от `ValidationException`
+- [x] Должен быть расположен в `src/Context/Shared/Domain/Exception/InvalidMessengerException.php`
+- [x] Выбрасывается при попытке создать Messenger с неподдерживаемым кодом
+- [x] Должен содержать static методы для создания с различными контекстами
 
 ## Реализация
 
@@ -43,4 +43,4 @@ throw InvalidMessengerException::unsupportedCode($code);
 
 ## Статус
 
-not-started
+done

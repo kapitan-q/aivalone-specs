@@ -55,5 +55,5 @@
 
 ## Статус
 
-* [] Определён `UserId` Value Object
-* [] Используется во всех процессах Account Context
+* [x] Определён `UserId` Value Object
+* [x] Используется во всех процессах Account Context

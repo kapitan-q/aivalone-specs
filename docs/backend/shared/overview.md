@@ -27,12 +27,17 @@
 
 ```
 src/Context/Shared/
-├── Domain
-|  ├── Model/             # Доменные модели (UserId, Email и тп)
-└── Presentation
-   └── Http
-      └── Controller/     # Базовый контроллер для health-check сервиса
-
+├── Domain/
+│   ├── Model/              # Value Objects, Enums (UUID, Messenger, Tariff)
+│   ├── Event/              # DomainEventInterface, AggregateRoot
+│   └── Exception/          # Базовые исключения (DomainException, ValidationException и др.)
+├── Application/
+│   └── Event/              # EventBusInterface
+├── Infrastructure/
+│   └── Event/              # SymfonyEventBus (реализация EventBusInterface)
+└── Presentation/
+    └── Http/
+        └── Controller/     # HealthCheckController
 ```
 
 ## Структура Shared Context
@@ -45,3 +50,11 @@ src/Context/Shared/
 ## Связанные документы
 
 - [Backend Overview](../overview.md)
+
+## Статус реализации
+
+* [x] Domain Layer (UUID, Messenger, Tariff, AggregateRoot, DomainEventInterface, Exceptions)
+* [x] Application Layer (EventBusInterface)
+* [x] Infrastructure Layer (SymfonyEventBus)
+* [x] Presentation Layer (HealthCheckController)
+* [ ] Unit-тесты

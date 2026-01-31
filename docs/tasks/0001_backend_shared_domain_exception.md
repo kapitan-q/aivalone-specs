@@ -6,10 +6,10 @@
 
 ## Требования
 
-- [ ] Класс должен наследоваться от `\Exception`
-- [ ] Должен быть расположен в `src/Context/Shared/Domain/Exception/DomainException.php`
-- [ ] Может быть унаследовано для конкретных случаев
-- [ ] Должен поддерживать стандартные параметры Exception (message, code, previous)
+- [x] Класс должен наследоваться от `\Exception`
+- [x] Должен быть расположен в `src/Context/Shared/Domain/Exception/DomainException.php`
+- [x] Может быть унаследовано для конкретных случаев
+- [x] Должен поддерживать стандартные параметры Exception (message, code, previous)
 
 ## Реализация
 
@@ -40,4 +40,4 @@ throw new DomainException("Нарушение бизнес-правила");
 
 ## Статус
 
-not-started
+done

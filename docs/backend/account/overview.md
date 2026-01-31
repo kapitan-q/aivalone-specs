@@ -89,3 +89,12 @@ src/Context/Account/
 - [Сервисы](./services/overview.md) — бизнес-логика и сервисы.
 - [Процессы](./processes/overview.md) — основные процессы и сценарии.
 - [Архитектурная диаграмма](./architecture-diagram.md) — визуализация архитектуры.
+
+## Статус реализации
+
+* [x] Domain Layer (User, UserId, UserMessenger, Events, Exceptions)
+* [x] Application Layer (UserService, Commands, CommandHandlers, Queries, QueryHandlers, DTO)
+* [x] Infrastructure Layer (UserEntity, UserRepository, UserDataMapper, Doctrine Migration)
+* [x] Интеграция с EventBus для публикации событий
+* [ ] Unit-тесты
+* [ ] Integration-тесты

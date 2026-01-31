@@ -29,4 +29,4 @@
 
 ## Статус
 
-* [] Реализация исключения InvalidMessengerException
+* [x] Реализация исключения InvalidMessengerException
