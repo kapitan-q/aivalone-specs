@@ -483,9 +483,9 @@ class AddPublicGroupHandler
 - [x] MessageReceivedIntegrationEvent содержит content и metadata
 
 ### Конфигурация
-- [ ] Integration Commands роутятся в нужные транспорты
-- [ ] Integration Events обрабатываются `#[AsMessageHandler]` handlers (задача 0095)
-- [ ] Failed messages попадают в failed transport
+- [x] Integration Commands роутятся в нужные транспорты
+- [x] Integration Events обрабатываются `#[AsMessageHandler]` handlers (задача 0095)
+- [x] Failed messages попадают в failed transport
 
 ## Зависимости
 
@@ -500,9 +500,9 @@ class AddPublicGroupHandler
 - [x] `SymfonyCommandBus` реализован в `Shared/Infrastructure/Command/`
 - [x] Все Integration Command DTO реализованы
 - [x] Все Integration Event DTO реализованы
-- [ ] Транспорты настроены в messenger.yaml
-- [ ] Routing настроен для всех команд и событий
-- [ ] Retry и failure стратегии используют стандартный Symfony Messenger
+- [x] Транспорты настроены в messenger.yaml
+- [x] Routing настроен для всех команд и событий
+- [x] Retry и failure стратегии используют стандартный Symfony Messenger
 - [x] Unit-тесты написаны и проходят
 - [x] Код соответствует PSR-12
 - [ ] PHPStan level 9 без ошибок
